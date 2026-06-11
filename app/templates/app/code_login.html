@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Login</title>
+    <link rel="stylesheet" href="{% static 'app/code_login.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Sign in with Email</h2>
+            {% if error %}
+            {{error}} for
+            {{expiry_age}}
+            second
+            {% endif %}
+
+            <form method="POST">
+                
+                {% csrf_token %} 
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+                <button type="submit" class="btn">Send Magic Link</button>
+            </form>
+            <p class="footer-text">We'll email you a secure link</p>
+        </div>
+    </div>
+</body>
+</html>

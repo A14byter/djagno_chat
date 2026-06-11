@@ -1,0 +1,29 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code</title>
+    <link rel="stylesheet" href="{% static 'app/code_check.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            {{error}}
+            <h2>Enter Verification Code</h2>
+            <p class="info">We've sent a 6‑digit code to your email</p>
+            <form method="POST">
+                
+                 {% csrf_token %} 
+                <div class="input-group">
+                    <input type="text" name="code" placeholder="000000" required>
+                </div>
+                <button type="submit" class="btn">Verify</button>
+            </form>
+            <p class="resend">Didn't receive? <a href="{% url 'code_login' %}">Resend code</a></p>
+        </div>
+    </div>
+</body>
+</html>

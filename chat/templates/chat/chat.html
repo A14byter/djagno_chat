@@ -1,0 +1,386 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <link rel="stylesheet" href="{% static 'chat/chat.css' %}">
+    
+</head>
+<body>
+
+<div class="chat-container">
+
+    <a href="{% url 'user_profile' chat.slug %}">
+        <div class="chat-header">{{ chat.name }}</div>
+    </a>
+
+    <div id="chat-messages" class="chat-messages">
+        {% for message in messages %}
+            {% if message.user == contact_user %}
+                <div class="contact-message" data-message-id="{{ message.id }}">
+                    <div class="message-actions">
+                        <span class="reply-btn">↩️</span>
+                    </div>
+
+                    {% if message.reply_to %}
+                        <div class="message-reply-wrapper">
+                            <strong>reply to{{ message.reply_to.user.username }}:</strong>
+                            <div>{{ message.reply_to.text|slice:":30" }}{% if not message.reply_to.text %}فایل📎{% endif %}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="message-text">
+                        <strong>{{ message.user.username }}:</strong>
+                        <span class="text-content">{{ message.text }}</span>
+                    </div>
+
+                    {% if message.photo %}
+                        <img src="{{ message.photo.url }}" class="message-img">
+                    {% endif %}
+
+                    {% if message.file %}
+                        <a href="{{ message.file.url }}" class="file-link">📎 file</a>
+                    {% endif %}
+
+                    <span class="message-time">{{ message.time|date:"H:i" }}</span>
+                </div>
+            {% else %}
+                <div class="your-message" data-message-id="{{ message.id }}">
+                    <div class="message-actions">
+                        <span class="reply-btn">↩️</span>
+                        <span class="edit-btn">✏️</span>
+                        <span class="delete-btn">🗑️</span>
+                    </div>
+
+                    <span class="read-status">
+                        {% if message.read %}✓✓{% else %}✓{% endif %}
+                    </span>
+
+                    {% if message.reply_to %}
+                        <div class="message-reply-wrapper">
+                            <strong> reply to</strong>{{ message.reply_to.user.username }}:</strong>
+                            <div>{{ message.reply_to.text|slice:":30" }}{% if not message.reply_to.text %}فایل📎{% endif %}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="message-text" data-text="{{ message.text }}">
+                        <span class="text-content">{{ message.text }}</span>
+                    </div>
+
+                    {% if message.photo %}
+                        <img src="{{ message.photo.url }}" class="message-img">
+                    {% endif %}
+
+                    {% if message.file %}
+                        <a href="{{ message.file.url }}" class="file-link">📎 file</a>
+                    {% endif %}
+
+                    <span class="message-time">{{ message.time|date:"H:i" }}</span>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div id="reply-preview-container" style="display: none;">
+        <div class="reply-box-preview">
+            <div>
+                <strong>reply to :<span id="reply-target-user"></span>:</strong>
+                <div id="reply-target-text" style="color: #555;"></div>
+            </div>
+            <button type="button" id="cancel-reply-btn">✕</button>
+        </div>
+    </div>
+
+    <form id="message-form" class="message-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <label for="photo-input" class="file-upload-label" title="ارسال تصویر">🖼️</label>
+        <input type="file" name="photo" id="photo-input" accept="image/*">
+        
+        <label for="file-input" class="file-upload-label" title="ارسال فایل">📎</label>
+        <input type="file" name="file" id="file-input">
+        
+        <input type="text" id="message-input" class="message-input" placeholder="پیام خود را بنویسید..." autocomplete="off">
+        
+        <button type="submit" id="send-button">Send</button>
+        <button type="button" id="cancel-edit" style="display:none;">Cancel</button>
+    </form>
+
+</div>
+
+{{ chat.slug|json_script:"json-chatroomname" }}
+{{ user.username|json_script:"json-username" }}
+
+<script>
+const chatRoomName = JSON.parse(document.getElementById('json-chatroomname').textContent);
+const chatUserName = JSON.parse(document.getElementById('json-username').textContent);
+
+const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/' + chatRoomName + '/');
+
+let editingMessageId = null;
+let replyTargetMessageId = null; // ✅ ذخیره شناسه پیام مادر جهت ریپلای
+const sentRead = new Set();
+const chatMessagesBox = document.getElementById('chat-messages');
+
+chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
+
+/* ---------------- SOCKET ---------------- */
+
+chatSocket.onmessage = function(e){
+    const data = JSON.parse(e.data);
+
+    if(data.type === "delete_message"){
+        const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if(el) el.remove();
+        return;
+    }
+
+    if(data.type === "edit_message"){
+        const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if(el){
+            const textEl = el.querySelector('.text-content');
+            const wrapperEl = el.querySelector('.message-text');
+            if(textEl) textEl.textContent = data.edited_text;
+            if(wrapperEl) wrapperEl.setAttribute('data-text', data.edited_text);
+        }
+        return;
+    }
+
+    if(data.type === "read_message"){
+        const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if(el){
+            const s = el.querySelector('.read-status');
+            if(s) s.textContent = "✓✓";
+        }
+        return;
+    }
+
+    // ✅ پردازش و ساختن ساختار پیام‌های ریپلای شده به صورت کاملاً زنده
+    const div = document.createElement('div');
+    const isMe = (data.user === chatUserName || data.username === chatUserName);
+    div.className = isMe ? 'your-message' : 'contact-message';
+    div.dataset.messageId = data.message_id;
+
+    let html = '';
+
+    if(isMe){
+        html += `
+        <div class="message-actions">
+            <span class="reply-btn">↩️</span>
+            <span class="edit-btn">✏️</span>
+            <span class="delete-btn">🗑️</span>
+        </div>
+        <span class="read-status">✓</span>`;
+    } else {
+        html += `<div class="message-actions"><span class="reply-btn">↩️</span></div>`;
+    }
+
+    // اگر پیام دریافتی ساختار ریپلای داشت، باکس پیام مادر را در بالای آن رندر کن
+    if(data.type === 'reply' && data.reply_to_user){
+        html += `
+        <div class="message-reply-wrapper">
+            <strong>پاسخ به ${data.reply_to_user}:</strong>
+            <div>${data.reply_to_text}</div>
+        </div>`;
+    }
+
+    const currentMsgText = data.the_message !== undefined ? data.the_message : data.message;
+    if(currentMsgText){
+        html += `<div class="message-text" data-text="${currentMsgText}">`;
+        if(!isMe) html += `<strong>${data.username || data.user}:</strong> `;
+        html += `<span class="text-content">${currentMsgText}</span></div>`;
+    }
+
+    if(data.photo){
+        html += `<img src="${data.photo}" class="message-img">`;
+    }
+
+    if(data.file){
+        html += `<a href="${data.file}" class="file-link">📎 file</a>`;
+    }
+
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    html += `<span class="message-time">${timeStr}</span>`;
+
+    div.innerHTML = html;
+    chatMessagesBox.appendChild(div);
+    chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
+
+    observe(div);
+};
+
+/* ---------------- READ RECEIPT (OBSERVER) ---------------- */
+
+const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry => {
+        if(!entry.isIntersecting) return;
+        const el = entry.target;
+        if(el.classList.contains('contact-message')){
+            const id = el.dataset.messageId;
+            if(id && !sentRead.has(id)){
+                sentRead.add(id);
+                chatSocket.send(JSON.stringify({
+                    type: "read_message",
+                    room: chatRoomName,
+                    message_id: id
+                }));
+            }
+        }
+    });
+},{threshold: 0.8});
+
+function observe(el){ observer.observe(el); }
+document.querySelectorAll('.contact-message').forEach(observe);
+
+/* ---------------- ACTION HANDLERS (CLICK EVENTS) ---------------- */
+
+document.addEventListener('click', function(e){
+    // لغو یا حذف پیام
+    if(e.target.classList.contains('delete-btn')){
+        const msg = e.target.closest('[data-message-id]');
+        if(confirm("Are you sure you want to delete this message?")) {
+            chatSocket.send(JSON.stringify({
+                type: "delete_message",
+                room: chatRoomName,
+                message_id: msg.dataset.messageId
+            }));
+        }
+    }
+
+    // کلیک روی دکمه ادیت پیام
+    if(e.target.classList.contains('edit-btn')){
+        const msg = e.target.closest('[data-message-id]');
+        const wrapperEl = msg.querySelector('.message-text');
+        const textEl = msg.querySelector('.text-content');
+        const text = wrapperEl.getAttribute('data-text') || textEl.textContent.trim();
+
+        cancelReply(); // در زمان ادیت حالت ریپلای متوقف شود
+        editingMessageId = msg.dataset.messageId;
+        document.getElementById('message-input').value = text;
+        document.getElementById('send-button').textContent = "Save";
+        document.getElementById('cancel-edit').style.display = "inline-block";
+        document.getElementById('message-input').focus();
+    }
+
+    // ✅ هندلر کلیک روی دکمه ریپلای (↩️)
+    if(e.target.classList.contains('reply-btn')){
+        const msg = e.target.closest('[data-message-id]');
+        const textEl = msg.querySelector('.text-content');
+        
+        let previewText = "فایل رسانه‌ای 📎";
+        if(textEl) previewText = textEl.textContent.trim().substring(0, 30);
+
+        // استخراج نام کاربر بر اساس نوع پیام (ارسالی یا دریافتی)
+        let targetUser = chatUserName;
+        if(msg.classList.contains('contact-message')){
+            const strongEl = msg.querySelector('strong');
+            if(strongEl) targetUser = strongEl.textContent.replace(':', '').trim();
+        }
+
+        replyTargetMessageId = msg.dataset.messageId;
+        
+        // نمایش باکس پیش‌نمایش ریپلای در ظاهر فرانت
+        document.getElementById('reply-target-user').textContent = targetUser;
+        document.getElementById('reply-target-text').textContent = previewText;
+        document.getElementById('reply-preview-container').style.display = 'block';
+        
+        if(editingMessageId) document.getElementById('cancel-edit').click(); // لغو ادیت همزمان
+        document.getElementById('message-input').focus();
+    }
+});
+
+// مدیریت دکمه‌های لغو حالت‌ها
+document.getElementById('cancel-edit').onclick = function(){
+    editingMessageId = null;
+    document.getElementById('message-input').value = "";
+    this.style.display = "none";
+    document.getElementById('send-button').textContent = "Send";
+};
+
+// ✅ تابع لغو حالت ریپلای
+function cancelReply(){
+    replyTargetMessageId = null;
+    document.getElementById('reply-preview-container').style.display = 'none';
+}
+document.getElementById('cancel-reply-btn').onclick = cancelReply;
+
+/* ---------------- FORM SUBMIT (SEND LOGIC) ---------------- */
+
+document.getElementById('message-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const textInput = document.getElementById('message-input');
+    const text = textInput.value.trim();
+    const photoInput = document.getElementById('photo-input');
+    const fileInput = document.getElementById('file-input');
+
+    // سناریوی ویرایش پیام
+    if(editingMessageId){
+        if(text) {
+            chatSocket.send(JSON.stringify({
+                type: "edit_message",
+                room: chatRoomName,
+                message_id: editingMessageId,
+                edited_text: text
+            }));
+        }
+        editingMessageId = null;
+        textInput.value = "";
+        document.getElementById('send-button').textContent = "Send";
+        document.getElementById('cancel-edit').style.display = "none";
+        return;
+    }
+
+    // ✅ سناریو ارسال عکس یا فایل (چه با ریپلای و چه عادی) با متد POST به ویو چت
+    if(photoInput.files.length > 0 || fileInput.files.length > 0){
+        const formData = new FormData(this);
+        formData.append('text', text);
+        if(replyTargetMessageId) {
+            formData.append('target_message_id', replyTargetMessageId); // الحاق شناسه پیام برای ریپلای فایلی
+        }
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success){
+                textInput.value = "";
+                photoInput.value = "";
+                fileInput.value = "";
+                cancelReply();
+            }
+        });
+        return;
+    }
+
+    // ✅ سناریو ارسال پیام متنی عادی
+    if(text){
+        if(replyTargetMessageId){
+            // اگر پیام متنی ریپلای بود، روی وب‌ساکت با فرمت ریپلای ارسال می‌شود
+            chatSocket.send(JSON.stringify({
+                type: "reply",
+                room: chatRoomName,
+                target_message_id: replyTargetMessageId,
+                the_message: text
+            }));
+            cancelReply();
+        } else {
+            // ارسال پیام متنی معمولی
+            chatSocket.send(JSON.stringify({
+                type: "chat_message",
+                message: text,
+                username: chatUserName,
+                room: chatRoomName
+            }));
+        }
+        textInput.value = "";
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+body {
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* کارت اصلی فرم */
+.add-chat-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 24px;
+        }
+
+        /* هدر یا عنوان فرم */
+.add-chat-container h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 24px;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        /* ساختار فرم چیدمان عمودی */
+.add-chat-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* استایل فیلدهای ورودی (Inputs) */
+.add-chat-form input[type="text"] {
+            width: 100%;
+            height: 46px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0 16px;
+            font-size: 15px;
+            color: #333333;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        /* افکت زمان فوکوس روی فیلدها */
+.add-chat-form input[type="text"]:focus {
+            background-color: #ffffff;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.15);
+        }
+
+        /* تغییر رنگ placeholder فیلدها */
+.add-chat-form input::placeholder {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* استایل دکمه ارسال (Submit Button) */
+.add-chat-form button[type="submit"] {
+            width: 100%;
+            height: 46px;
+            background-color: #0088cc;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(0, 136, 204, 0.2);
+            margin-top: 8px;
+        }
+
+.add-chat-form button[type="submit"]:hover {
+            background-color: #0077b3;
+        }
+
+        .add-chat-form button[type="submit"]:active {
+            transform: scale(0.98);
+        }

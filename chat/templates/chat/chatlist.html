@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'chat/chatlist.css' %}">
+</head>
+<body>
+    <div class="chatlist-container">
+        
+        <div class="chatlist-header">Chats</div>
+
+        {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+        {% else %}
+            
+            {% for chat in chats %}
+                <a href="{% url 'chat' chat.slug %}" class="chat-item-link">
+                    <div class="chat-item">
+                        <div class="chat-avatar">💬</div>
+                        <div class="chat-name-text">{{ chat.name }}</div>
+                    </div>
+                </a>
+            {% empty %}
+                <div style="text-align: center; color: #94a3b8; padding: 20px 0; font-size: 15px;">
+                    No active chats yet. Click below to start one!
+                </div>
+            {% endfor %} 
+            
+        {% endif %}
+
+        <div class="add-chat-wrapper">
+            <a href="{% url 'add_chat' %}" class="add-chat-btn">
+                <span>➕</span> Start New Chat
+            </a>
+        </div>
+
+    </div>
+</body>
+</html>

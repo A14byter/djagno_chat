@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'chat/userprofile.css' %}">
+</head>
+<body>
+   <div class="profile-card">
+        <div class="avatar-container">
+            {% if target_account.profile_picture %}
+                <img src="{{ target_account.profile_picture.url }}" alt="Profile Picture">
+            {% else %}
+                <span style="font-size: 45px;">👤</span>
+            {% endif %}
+        </div>
+
+        <div class="profile-name">
+            {% if target_account.name or target_account.last_name %}
+                {{ target_account.name }} {{ target_account.last_name }}
+            {% else %}
+                بدون نام
+            {% endif %}
+        </div>
+
+        <div class="profile-username">@{{ target_account.user.username }}</div>
+        
+        <div class="divider"></div>
+
+        <div class="profile-bio-title">Biography</div>
+        <div class="profile-bio">
+            {% if target_account.bio %}
+                {{ target_account.bio }}
+            {% else %}
+                <span class="empty-bio">No bio available.</span>
+            {% endif %}
+        </div>
+    </div>
+    
+</body>
+</html>

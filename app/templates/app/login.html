@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In | Your Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'app/login.css' %}">
+    
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Log in to your account</p>
+            {% if error %}
+                {{error}}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" name="phone_number" id="phone" required placeholder=" ">
+                    <label for="phone">Phone Number</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" id="password" required placeholder=" ">
+                    <label for="password">Password</label>
+                </div>
+                <button type="submit" class="btn-login">Log In</button>
+            </form>
+            
+            <div class="forgot-link">
+                <a href="{% url 'code_login' %}">Forgot password?</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

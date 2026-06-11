@@ -1,0 +1,62 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Create Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'app/signup.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="signup-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Join us today and start your journey</p>
+            {% if error %}
+            <div class="error">
+                {{error}}
+                </div>
+            {% endif %}
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" name="phone_number" id="phone_number" required placeholder=" " value="{{context.phone_number}}">
+                    <label for="phone_number">Phone Number</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="name" id="name" required placeholder=" " value="{{context.name}}">
+                    <label for="name">First Name</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="last_name" id="last_name" required placeholder=" " value="{{context.last_name}}">
+                    <label for="last_name">Last Name</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="username" id="username" required placeholder=" " value="{{context.username}}">
+                    <label for="username">Username</label>
+                </div>
+                <div class="input-group">
+                    <input type="email" name="email" id="email" required placeholder=" " value="{{context.email}}">
+                    <label for="email">Email Address</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" id="password" required placeholder=" " value="{{context.password}}">
+                    <label for="password">Password</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="confirm_password" id="confirm_password" required placeholder=" " value="{{context.confirm_password}}">
+                    <label for="confirm_password">Confirm Password</label>
+                </div>
+                <button type="submit" class="btn-submit">Sign Up</button>
+            </form>
+            
+            <div class="login-link">
+                Already have an account? <a href="{% url 'login' %}">Log in</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
